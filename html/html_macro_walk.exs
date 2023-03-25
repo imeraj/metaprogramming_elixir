@@ -4,39 +4,34 @@ defmodule Html do
            line |> String.trim() |> String.to_atom()
          end)
 
-  for tag <- @tags do
-   defmacro unquote(tag)(attrs, do: inner) do
-     tag = unquote(tag)
-     quote do: tag(unquote(tag), unquote(attrs), do:  unquote(inner))
-   end
-
-   defmacro unquote(tag)(attrs \\ []) do
-     tag = unquote(tag)
-     quote do: tag(unquote(tag), unquote(attrs))
-   end
-  end
-
-
   defmacro markup(do: block) do
     quote do
-      import Kernel, except: [div: 2]
       {:ok, var!(buffer, Html)} = start_buffer([])
-      unquote(block)
+      unquote(Macro.postwalk(block, &postwalk/1))
       result = render(var!(buffer, Html))
       :ok = stop_buffer(var!(buffer, Html))
       result
     end
   end
 
-  defmacro tag(name, attrs \\ []) do
-    {inner, attrs} = Keyword.pop(attrs, :do)
-    quote do: tag(unquote(name), unquote(attrs), do: unquote(inner))
+  def postwalk({:text, _meta, [string]}) do
+    quote do: put_buffer(var!(buffer, Html), to_string(unquote(string)))
   end
 
-  defmacro tag(name, attrs, do: inner) do
+  def postwalk({tag_name, _meta, [[do: inner]]}) when tag_name in @tags do
+    quote do: tag(unquote(tag_name), [], do: unquote(inner))
+  end
+
+  def postwalk({tag_name, _meta, [attrs, [do: inner]]}) when tag_name in @tags do
+    quote do: tag(unquote(tag_name), unquote(attrs), do: unquote(inner))
+  end
+
+  def postwalk(ast), do: ast
+
+  defmacro tag(name, attrs \\ [], do: inner) do
     quote do
       put_buffer(var!(buffer, Html), open_tag(unquote_splicing([name, attrs])))
-      unquote(inner)
+      unquote(postwalk(inner))
       put_buffer(var!(buffer, Html), "</#{unquote(name)}>")
     end
   end
@@ -59,6 +54,6 @@ defmodule Html do
 
   def open_tag(name, attrs) do
     attr_html = for {key, val} <- attrs, into: "", do: " #{key}=\"#{val}\""
-     "<#{name}#{attr_html}>"
+    "<#{name}#{attr_html}>"
   end
 end
