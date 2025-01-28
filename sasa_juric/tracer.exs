@@ -4,7 +4,7 @@ defmodule Tracer do
 
     quote do
       result = unquote(expression)
-      Tracer.input(unquote(expression_string), result)
+      Tracer.print(unquote(expression_string), result)
       result
     end
   end
