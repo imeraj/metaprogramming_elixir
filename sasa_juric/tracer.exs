@@ -1,6 +1,19 @@
 defmodule Tracer do
   defmacro deftraceable(head, body) do
-    {fun_name, args_list} = name_and_args(head)
+    {fun_name, args_ast} = name_and_args(head)
+    {arg_names, decorated_args} = decorate_args(args_ast)
+
+    head =
+      Macro.postwalk(
+        head,
+        fn
+          {fun_ast, context, old_args} when fun_ast == fun_name and old_args == args_ast ->
+            {fun_ast, context, decorated_args}
+
+          other ->
+            other
+        end
+      )
 
     quote do
       def unquote(head) do
@@ -8,7 +21,7 @@ defmodule Tracer do
         line = __ENV__.line
         module = __ENV__.module
 
-        passed_args = unquote(args_list) |> Enum.map(&inspect/1) |> Enum.join(", ")
+        passed_args = unquote(arg_names) |> Enum.map(&inspect/1) |> Enum.join(", ")
         function_name = unquote(fun_name)
 
         result = unquote(body[:do])
@@ -28,6 +41,20 @@ defmodule Tracer do
 
   defp name_and_args(short_head) do
     Macro.decompose_call(short_head)
+  end
+
+  def decorate_args(args_ast) do
+    for {arg_ast, index} <- Enum.with_index(args_ast) do
+      arg_name = Macro.var(:"arg#{index}", __MODULE__)
+
+      full_arg =
+        quote do
+          unquote(arg_ast) = unquote(arg_name)
+        end
+
+      {arg_name, full_arg}
+    end
+    |> Enum.unzip()
   end
 
   defmacro trace(expression) do
