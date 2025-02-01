@@ -1,10 +1,13 @@
 defmodule Tracer do
   defmacro deftraceable(head, body) do
-    {fun_name, args_ast} = name_and_args(head)
-    {arg_names, decorated_args} = decorate_args(args_ast)
-    head = replace_args_with_decorated_args(head, fun_name, args_ast, decorated_args)
+    quote bind_quoted: [
+            head: Macro.escape(head, unquote: true),
+            body: Macro.escape(body, unquote: true)
+          ] do
+      {fun_name, args_ast} = Tracer.name_and_args(head)
+      {arg_names, decorated_args} = Tracer.decorate_args(args_ast)
+      head = Tracer.replace_args_with_decorated_args(head, fun_name, args_ast, decorated_args)
 
-    quote do
       def unquote(head) do
         file = __ENV__.file
         line = __ENV__.line
@@ -24,7 +27,7 @@ defmodule Tracer do
     end
   end
 
-  defp replace_args_with_decorated_args(head, fun_name, args_ast, decorated_args) do
+  def replace_args_with_decorated_args(head, fun_name, args_ast, decorated_args) do
     Macro.postwalk(
       head,
       fn
@@ -37,18 +40,18 @@ defmodule Tracer do
     )
   end
 
-  defp name_and_args({:when, _, [short_head | _]}), do: name_and_args(short_head)
-  defp name_and_args(short_head), do: Macro.decompose_call(short_head)
+  def name_and_args({:when, _, [short_head | _]}), do: name_and_args(short_head)
+  def name_and_args(short_head), do: Macro.decompose_call(short_head)
 
-  defp decorate_args([]), do: {[], []}
+  def decorate_args([]), do: {[], []}
 
-  defp decorate_args(args_ast) when is_list(args_ast) do
+  def decorate_args(args_ast) when is_list(args_ast) do
     Enum.with_index(args_ast)
     |> Enum.map(&decorate_args/1)
     |> Enum.unzip()
   end
 
-  defp decorate_args({arg_ast, index}) do
+  def decorate_args({arg_ast, index}) do
     if is_tuple(arg_ast) and elem(arg_ast, 0) == :\\ do
       {:\\, _, [{optional_name, _, _}, _]} = arg_ast
       {Macro.var(optional_name, nil), arg_ast}
