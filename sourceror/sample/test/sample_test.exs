@@ -28,4 +28,30 @@ defmodule SampleTest do
              }
            ]
   end
+
+  test "parses trailing comments" do
+    quoted =
+      """
+      def foo() do
+        :ok
+      # A trailing comment
+      end # Not a trailing comment for :foo
+      """
+      |> Sourceror.parse_string!()
+
+    assert {:__block__, block_meta, [{:def, meta, _}]} = quoted
+
+    assert [%{line: 3, text: "# A trailing comment"}] = meta[:trailing_comments]
+
+    assert [
+             %{
+               line: 4,
+               column: 5,
+               next_eol_count: 1,
+               previous_eol_count: 0,
+               text: "# Not a trailing comment for :foo"
+             }
+           ] =
+             block_meta[:trailing_comments]
+  end
 end
