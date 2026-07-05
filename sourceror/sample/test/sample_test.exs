@@ -54,4 +54,28 @@ defmodule SampleTest do
            ] =
              block_meta[:trailing_comments]
   end
+
+  test "updates the source code" do
+    source = """
+    String.to_atom(foo)\
+    """
+
+    new_source =
+      source
+      |> Sourceror.parse_string!()
+      |> Macro.postwalk(fn
+        {{:., dot_meta, [{:__aliases__, alias_meta, [:String]}, :to_atom]}, call_meta, args} ->
+          {{:., dot_meta, [{:__aliases__, alias_meta, [:String]}, :to_existing_atom]}, call_meta,
+           args}
+
+        quoted ->
+          quoted
+      end)
+      |> Sourceror.to_string()
+
+    assert new_source ==
+             """
+             String.to_existing_atom(foo)\
+             """
+  end
 end
