@@ -78,4 +78,50 @@ defmodule SampleTest do
              String.to_existing_atom(foo)\
              """
   end
+
+  test "patches the source code" do
+    source =
+      """
+      case foo do
+        nil ->         :bar
+        _ ->
+
+            String.to_atom(foo)
+
+            end\
+      """
+
+    {_quoted, patches} =
+      source
+      |> Sourceror.parse_string!()
+      |> Macro.postwalk([], fn
+        {{:., dot_meta, [{:__aliases__, alias_meta, [:String]}, :to_atom]}, call_meta, args} =
+            quoted,
+        patches ->
+          range = Sourceror.get_range(quoted)
+
+          replacement =
+            {{:., dot_meta, [{:__aliases__, alias_meta, [:String]}, :to_existing_atom]},
+             call_meta, args}
+            |> Sourceror.to_string()
+
+          patch = %{range: range, change: replacement}
+
+          {quoted, [patch | patches]}
+
+        quoted, patches ->
+          {quoted, patches}
+      end)
+
+    assert Sourceror.patch_string(source, patches) ==
+             """
+             case foo do
+               nil ->         :bar
+               _ ->
+
+                   String.to_existing_atom(foo)
+
+                   end\
+             """
+  end
 end
