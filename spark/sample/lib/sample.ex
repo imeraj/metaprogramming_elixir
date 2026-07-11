@@ -1,18 +1,13 @@
 defmodule Sample do
-  @moduledoc """
-  Documentation for `Sample`.
-  """
+  @moduledoc false
 
-  @doc """
-  Hello world.
+  def run do
+    Sample.PersonValidator.validate(%{id: "1", name: "Meraj", email: "meraj.enigma@gmail.com"})
+    |> IO.inspect()
 
-  ## Examples
+    Sample.PersonValidator.validate(%{id: "2", name: "Meraj", email: "meraj.enigma"})
+    |> IO.inspect()
 
-      iex> Sample.hello()
-      :world
-
-  """
-  def hello do
-    :world
+    :ok
   end
 end
