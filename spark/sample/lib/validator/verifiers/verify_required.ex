@@ -8,11 +8,16 @@ defmodule Sample.Validator.Verifiers.VerifyRequired do
     if Enum.all?(required, &Enum.member?(fields, &1)) do
       :ok
     else
+      location =
+        Spark.Dsl.Extension.get_opt_anno(dsl_state, [:fields], :required) ||
+          Spark.Dsl.Extension.get_section_anno(dsl_state, [:fields])
+
       {:error,
        Spark.Error.DslError.exception(
          message: "All required fields must be specified in fields",
          path: [:fields, :required],
-         module: Spark.Dsl.Verifier.get_persisted(dsl_state, :module)
+         module: Spark.Dsl.Verifier.get_persisted(dsl_state, :module),
+         location: location
        )}
     end
   end

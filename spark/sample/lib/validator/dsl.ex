@@ -51,5 +51,8 @@ defmodule Sample.Validator.Dsl do
       Sample.Validator.Transformers.GenerateValidate
     ],
     persisters: [Sample.Validator.Persisters.CacheFieldNames],
-    verifiers: [Sample.Validator.Verifiers.VerifyRequired]
+    verifiers: [
+      Sample.Validator.Verifiers.VerifyRequired,
+      Sample.Validator.Verifiers.UniqueFieldNames
+    ]
 end
