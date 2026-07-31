@@ -46,6 +46,8 @@ defmodule Sample.Validator do
 
   defp type_check(%{type: :string}, value) when is_binary(value), do: true
   defp type_check(%{type: :integer}, value) when is_integer(value), do: true
+  defp type_check(%{type: :datetime}, %DateTime{}), do: true
+  defp type_check(%{type: :datetime}, _value), do: false
   defp type_check(_field, _value), do: false
 
   defp check(%{check: check}, value) when is_function(check, 1), do: check.(value)

@@ -4,5 +4,6 @@ defmodule Sample.PersonValidator.BaseFeilds do
   fields do
     required([:id, :name])
     field(:name, :string)
+    timestamps?(true)
   end
 end

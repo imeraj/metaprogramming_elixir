@@ -38,7 +38,12 @@ defmodule Sample.Validator.Dsl do
             schema: [
               Field.new(:required, {:list, :atom},
                 doc: "The fields that must be provided for validation to succeed"
-              )
+              ),
+              timestamps?: [
+                type: :boolean,
+                doc: "Set to false to skip adding timestamps",
+                default: true
+              ]
             ],
             entities: [@field]
           )
@@ -48,6 +53,7 @@ defmodule Sample.Validator.Dsl do
     sections: [@fields],
     transformers: [
       Sample.Validator.Transformers.AddId,
+      Sample.Validator.Transformers.AddTimestamps,
       Sample.Validator.Transformers.GenerateValidate
     ],
     persisters: [Sample.Validator.Persisters.CacheFieldNames],
