@@ -5,7 +5,7 @@ defmodule AshRpc.Posts.Post do
     domain: AshRpc.Posts,
     extensions: [AshRpc.RpcGen.Resource]
 
-  defmodule Post.Status do
+  defmodule Status do
     use Ash.Type.Enum,
       values: [
         :draft,
@@ -22,7 +22,7 @@ defmodule AshRpc.Posts.Post do
   attributes do
     uuid_primary_key(:id)
     attribute(:title, :string, public?: true, allow_nil?: false)
-    attribute(:status, Post.Status, public?: true)
+    attribute(:status, Status, public?: true)
   end
 
   actions do
